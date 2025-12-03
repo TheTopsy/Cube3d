@@ -5,19 +5,22 @@ int	main(void)
 {
 	t_data	img;
     t_player player;
+	t_ray *ray;
+	ray = malloc(RAY_NUM * sizeof(t_ray)); // should be the window width for smoothest render
 	img.grid = create_grid(COLS, ROWS);
 	img.map = treat_map("test.cub");
 
-	player.px = WIDTH / 2;
-	player.py = HEIGHT / 2;
-	player.angle = 0.0;
+	player.px = 10;
+	player.py = 10;
+	player.angle = 0.0 * M_PI / 180.0;
 	player.last_mouse_x = WIDTH / 2;
     player.img = &img;
 	player.dir = 0;
 	player.dor = 0;
+	player.ray = ray;
 	mlx_start(&img);
 	
-	draw_grid(&img, COLS, ROWS, 0x00FFFFFF);
+	// draw_grid(&img, COLS, ROWS, 0x00FFFFFF);
 	draw_map(&img,img.map);
 	draw_player(&player, player.px, player.py, 10, 0x00FF0000);
 

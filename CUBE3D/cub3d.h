@@ -16,6 +16,10 @@
 # define WIDTH 1200
 # define COLS 60
 # define ROWS 60
+# define RAY_NUM 50
+# define M_PI 3.14159265358979323846
+# define FOV (60.0 * M_PI / 180.0)
+# define TILE_SIZE 40
 
 typedef struct s_textures
 {
@@ -57,9 +61,16 @@ typedef struct	s_data {
 
 typedef struct s_ray
 {
-	float hitx;
-	float hity;
+	float vhitx;
+	float vhity;
+	float hhitx;
+	float hhity;
+	float firstX;
+	float firstY;
+	float xstep;
+	float ystep;
 	float length;
+	float angle;
 }	t_ray;
 
 typedef struct s_player
@@ -71,6 +82,7 @@ typedef struct s_player
     t_data *img;
     char dir;
     char dor;
+	t_ray *ray;
 }				t_player;
 
 

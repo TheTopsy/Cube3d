@@ -49,20 +49,97 @@ void draw_map(t_data *img, char **map)
 	}
 }
 
+void hdda(t_player *player)
+{
+    for (int i = 0; i < RAY_NUM; ++i)
+    {
+        player->ray[i].angle = player->angle - (FOV / 2.0) + i * (FOV / RAY_NUM);
+        float dx = cos(player->ray[i].angle);
+        float dy = sin(player->ray[i].angle);
+        
+        
+        if (dy > 0.0)
+        {
+            player->ray[i].firstY = (floor(player->py / TILE_SIZE) + 1.0) * TILE_SIZE;
+            player->ray[i].ystep  = (float)TILE_SIZE;
+        }
+        else
+        {
+            player->ray[i].firstY = floor(player->py / TILE_SIZE) * TILE_SIZE;
+            player->ray[i].ystep  = -(float)TILE_SIZE;
+        }
+        player->ray[i].xstep = player->px + (player->ray[i].firstY - player->py) / tan(player->ray[i].angle);
+        
+        for (int step = 0; step < 200; ++step)
+        {
+            if (player->ray[i].xstep < 0.0 || player->ray[i].xstep >= (float)WIDTH || player->ray[i].firstY < 0.0 || player->ray[i].firstY >= (float)HEIGHT)
+                break;
+            my_mlx_pixel_put(player->img, (int)player->ray[i].xstep, (int)player->ray[i].firstY, 0x00FFa500);
+            player->ray[i].firstY += player->ray[i].ystep;
+            player->ray[i].xstep += player->ray[i].ystep / tan(player->ray[i].angle);
+        }
+    }
+}
+void vdda(t_player *player)
+{
+    for (int i = 0; i < RAY_NUM; ++i)
+    {
+        player->ray[i].angle = player->angle - (FOV / 2.0) + i * (FOV / RAY_NUM);
+        float dx = cos(player->ray[i].angle);
+        float dy = sin(player->ray[i].angle);
+        
+        if (dx > 0.0)
+        {
+            player->ray[i].firstX = (floor(player->px / TILE_SIZE) + 1.0) * TILE_SIZE;
+            player->ray[i].xstep  = (float)TILE_SIZE;
+        }
+        else
+        {
+            player->ray[i].firstX = floor(player->px / TILE_SIZE) * TILE_SIZE;
+            player->ray[i].xstep  = -(float)TILE_SIZE;
+        }
+        player->ray[i].ystep = player->py + (player->ray[i].firstX - player->px) * tan(player->ray[i].angle);
+        
+        for (int step = 0; step < 200; ++step)
+        {
+            if (player->ray[i].firstX < 0.0 || player->ray[i].firstX >= (float)WIDTH || player->ray[i].ystep < 0.0 || player->ray[i].ystep >= (float)HEIGHT)
+                break;
+
+            my_mlx_pixel_put(player->img, (int)player->ray[i].firstX, (int)player->ray[i].ystep, 0x00FFFF00);
+            player->ray[i].firstX += player->ray[i].xstep;
+            player->ray[i].ystep += player->ray[i].xstep * tan(player->ray[i].angle);
+        }
+    }
+}
+float normalize_angle(float angle)
+{
+    if (angle < 0)
+        angle += 2 * M_PI;
+    if (angle > 2 * M_PI)
+        angle -= 2 * M_PI;
+    return angle;
+}
+
 void draw_rays(t_player *player, float px, float py)
 {
-    for (int i = 0; i < 20; i++)
+    player->angle = normalize_angle(player->angle);
+    hdda(player);   
+    vdda(player);
+    for (int i = 0; i < RAY_NUM; i++)
     {
-        float ray_angle = player->angle + (i - 10) * 0.1;
-        float dx = cos(ray_angle) * 2;
-        float dy = sin(ray_angle) * 2;
+        player->ray[i].angle = player->angle - (FOV / 2) + (i * (FOV / RAY_NUM));
+        player->ray[i].angle = normalize_angle(player->ray[i].angle);
+        float dx = cos(player->ray[i].angle) * 2;
+        float dy = sin(player->ray[i].angle) * 2;
         
-        float x = px;
-        float y = py;
+        float x = player->px;
+        float y = player->py;
         
-        for (int step = 0; step < 100; step++)
+        for (int step = 0; step < 300; step++)
         {
-            if (x < 0 || x >= WIDTH || y < 0 || y >= HEIGHT)
+            if ((x < 0 || x >= WIDTH) || (y < 0 || y >= HEIGHT))
+                break;
+            if (player->img->map[(int)(y/TILE_SIZE)][(int)(x/TILE_SIZE)] == '1')
                 break;
                 
             my_mlx_pixel_put(player->img, (int)x, (int)y, 0x0000FF00);
@@ -239,9 +316,9 @@ int loop_hook(t_player *player)
 	if(player->dor == -1)
 		player->angle -= 0.01;
 	memset(player->img->addr, 0, HEIGHT * player->img->line_length); //i guess i can to this with mlx_destroy_image
-    	draw_map(player->img, player->img->map);
+    	// draw_map(player->img, player->img->map);
     	draw_player(player, player->px, player->py, 10, 0x00FF0000);
-        draw_grid(player->img, COLS, ROWS, 0x00FFFFFF);
+        // draw_grid(player->img, COLS, ROWS, 0x00FFFFFF);
     	mlx_put_image_to_window(player->img->mlx, player->img->win, player->img->img, 0, 0);
 	//printf("dir = %d\n", player->dir);
 	return (0);
