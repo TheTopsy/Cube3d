@@ -1,31 +1,34 @@
 #include "cub3d.h"
 
 
-int	main(void)
+int	main(int ac, char **av)
 {
 	t_data	img;
-    t_player player;
-	img.grid = create_grid(COLS, ROWS);
-	img.map = treat_map("test.cub");
+	t_player player;
+	t_ray *ray;
 
-	player.px = WIDTH / 2;
-	player.py = HEIGHT / 2;
-	player.angle = 0.0;
-	player.last_mouse_x = WIDTH / 2;
-    player.img = &img;
-	player.dir = 0;
-	player.dor = 0;
-	mlx_start(&img);
+	if(ac < 2 || ac > 3)
+		return (1);
+	img.map = treat_map(&player, av[1]);
+	if(check_map(img.map) == - 1)
+		return (1);
+
+        player.ray_num = (WIDTH / STRIPESIZE);
+	ray = malloc(player.ray_num * sizeof(t_ray));
+	init_player(&player, &img, &ray);
 	
-	draw_grid(&img, COLS, ROWS, 0x00FFFFFF);
-	draw_map(&img,img.map);
-	draw_player(&player, player.px, player.py, 10, 0x00FF0000);
+	printf("%c\n", player.map->map[0][6]);
 
-	//mlx_key_hook(img.win,keypress, &player);
+        //normalizeangle(&player.angle);
+        //player.ray_num = (WIDTH / STRIPESIZE);
+
+	mlx_start(&img);
+	draw_grid(&player, &img);
+	draw_player(&player, player.px, player.py, 10, 0x00FF0000, ray);
+
 	mlx_hook(img.win, 2, 1L<<0, keypress, &player);     // Key press
 	mlx_hook(img.win, 3, 1L<<1, key_release, &player);   // Key release
-	// mlx_hook(img.win, 6, 1L<<6, mouse_move, &player);
-	mlx_put_image_to_window(img.mlx, img.win, img.img, 0, 0);
+	//mlx_put_image_to_window(img.mlx, img.win, player.img->img, 0, 0);
 	mlx_loop_hook(img.mlx, loop_hook, &player);
 	mlx_loop(img.mlx);
 }

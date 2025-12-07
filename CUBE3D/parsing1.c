@@ -180,9 +180,9 @@ void fill_map(t_map *map, char *info)
 		i++;
 	map->rows = get_rows(info + i);
 	map->cols = get_cols(info + i);
-	map->map = malloc(map->cols * sizeof(char *));
-	while(y < map->cols)
-		map->map[y++] = malloc(map->rows + 1);
+	map->map = malloc(map->rows * sizeof(char *));
+	while(y < map->rows)
+		map->map[y++] = malloc(map->cols + 1);
 	y = 0;
 	while(info[i])
 	{
@@ -190,7 +190,7 @@ void fill_map(t_map *map, char *info)
 			map->map[y][x++] = info[i++];
 		else
 		{
-			map->map[y][++x] = '\0';
+			map->map[y][x] = '\0';
 			x = 0;
 			i++;
 			y++;
@@ -199,7 +199,7 @@ void fill_map(t_map *map, char *info)
 	map->map[y] = NULL;
 }
 
-char **split_info(char *info)
+char **split_info(t_player *player, char *info)
 {
 	t_map *map;
 	t_textures *txtrs;
@@ -208,7 +208,7 @@ char **split_info(char *info)
 	txtrs = malloc(sizeof(t_textures));
 	map->map_start = fill_textures(txtrs, info);
 	fill_map(map, info);
-	/*int x = 0;
+	int x = 0;
 	int y = 0;
 	while(y < map->rows)
 	{
@@ -217,18 +217,160 @@ char **split_info(char *info)
 		printf("\n");
 		y++;
 		x = 0;
-	}*/
+	}
 	printf("%s\n", txtrs->so);
 	printf("%s\n", txtrs->ea);
+	player->map = map;
 	return (map->map);
 }
 
-char **treat_map(char *map)
+char **treat_map(t_player *player, char *map)
 {
 	int fd;
 
 	if(!check_format(map))
 		return (NULL);
 	fd = open(map, O_RDONLY);
-	return split_info(read_map(fd));
+	return split_info(player, read_map(fd));
+}
+int flfl(char **map, int y, int x)
+{
+    if (y < 0 || x < 0)
+        return 0;
+    if (map[y] == NULL || map[y][x] == '\0')
+	    return 0;
+
+    if (map[y][x] == '1' || map[y][x] == 'V')
+        return 0;
+    else if (map[y][x] == ' ' || map[y][x] == '0')
+   	 map[y][x] = 'V';
+    else
+	    return 1;
+
+    if (flfl(map, y + 1, x)) return 1;
+    if (flfl(map, y - 1, x)) return 1;
+    if (flfl(map, y, x + 1)) return 1;
+    if (flfl(map, y, x - 1)) return 1;
+
+    return 0;
+}
+int check_boundaries(char **map)
+{
+	int i = 0;
+	while ( map[i])
+	{
+        int len = (int)strlen(map[i]);
+        if (len == 0) continue;
+
+        int fj = 0;
+        while (fj < len && map[i][fj] == ' ')
+            fj++;
+
+        if (fj >= len)
+            continue;
+
+        if (map[i][fj] != '1')
+        {
+            printf("Invalid map\n");
+            // return -1;
+			exit(0);
+        }
+
+        int j = fj;
+        while (j < len && map[i][j] != ' ')
+            j++;
+
+        if (j - 1 < 0 || map[i][j - 1] != '1')
+        {
+            printf("Invalid map\n");
+            // return -1;
+			exit(0);
+        }
+		i++;
+    }
+    return 0;
+}
+
+int check_map(char **map)
+{
+    int i = 0, j;
+	check_boundaries(map);
+	while ( map[i])
+    {
+        j = 0;
+        while ( map[i][j])
+        {
+            if ( map[i][j] == ' ')
+            {
+
+                if (flfl(map, i, j))
+                {
+                    printf("Invalid map\n");
+                    return -1;
+                }
+            }
+            j++;
+        }
+        i++;
+    }
+    return 0;
+}
+
+float get_angle(char d)
+{
+	if (d == 'S')
+		return 270 * M_PI / 180;
+	else if (d == 'N')
+		return 90 * M_PI / 180;
+	else if (d == 'W')
+		return 180 * M_PI / 180;
+	else if (d == 'E')
+		return 0 * M_PI / 180;
+	return 0;
+}
+
+void print_error(int flag)
+{
+	if (flag == 1)
+		printf("Error: Too many players on map\n");
+	else if (flag == 2)
+		printf("Error: No players found on map\n");
+	exit(1);
+}
+
+
+void get_player_info(t_player *player, char **map)
+{
+	int i = 0, j, pos = 0;
+    while (map[i])
+    {
+        j = 0;
+        while (map[i][j])
+        {
+			if (pos == 2)
+				print_error(1);
+            if ( map[i][j] == 'S' || map[i][j] == 'N' || map[i][j] == 'W' || map[i][j] == 'E')
+            {
+				player->angle = get_angle(map[i][j]);
+				player->px = (float)j * TILESIZE;
+				player->py = (float)i * TILESIZE;
+				pos++;
+            }
+				j++;
+		}
+        i++;
+    }
+	if (pos == 0)
+		print_error(2);
+}
+
+
+void init_player(t_player *player, t_data *img, t_ray **ray)
+{
+	get_player_info(player, img->map);
+	player->img = img;
+	player->last_mouse_x = WIDTH / 2;
+	player->dir = 0;
+	player->dor = 0;
+	player->ray = *ray;
 }

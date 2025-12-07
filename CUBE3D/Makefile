@@ -1,6 +1,6 @@
 CC = cc
 
-CFLAGS = -Wall -Wextra
+CFLAGS = -Wall -Wextra -g
 
 MLX_FLAGS = -lmlx -L/mnt/c/Users/azert/Desktop/CUBE/CUBE3D/mlx/ -lm -lXext -lX11
 

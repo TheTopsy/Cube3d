@@ -3,7 +3,8 @@
 void	my_mlx_pixel_put(t_data *data, float x, float y, int color)
 {
 	char	*dst;
-	
+	if (x < 0 || y < 0 || x >= WIDTH || y >= HEIGHT)
+        	return;	
 	dst = data->addr + ((int)y * data->line_length + (int)x * (data->bits_per_pixel / 8));
 	*(unsigned int*)dst = color;
 }
